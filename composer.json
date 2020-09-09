@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.2.5",
+        "doctrine/dbal": "^2.10",
         "fideloper/proxy": "^4.2",
         "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^6.3",
@@ -35,6 +36,9 @@
         }
     },
     "autoload": {
+        "files": [
+            "app/Helpers/helper.php"
+        ],
         "psr-4": {
             "App\\": "app/"
         },
