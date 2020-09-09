@@ -5,7 +5,7 @@ return [
     'success' => [
         'success' => 'Success',
         'registration_success' => 'User register successfully.',
-        'login_success' => 'You have logged in to system successfully.',
+        'login_success' => 'You have logged into system successfully.',
         'logout_success' => 'Logout Success',
         'logout_success_message' => 'You have logged out successfully.',
         'password_reset' => 'Password Reset',

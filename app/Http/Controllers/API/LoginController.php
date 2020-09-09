@@ -34,7 +34,7 @@ class LoginController extends BaseController
 
     public function __construct()
     {
-        $this->fromEmail = 'vibhor.timeloop@gmail.com';
+        $this->fromEmail = 'defineYourEmailHere@gmail.com';
         $this->user_object = new User();
         $this->passwordReset_object = new PasswordReset();
         $this->imagepath = '/images/profile/';
@@ -146,7 +146,7 @@ class LoginController extends BaseController
                 $user = $this->user_object->getUserDetailsByUserField('email', $request->email);
                 if (!$user) {
                     return $this->sendError(Lang::get('authentication.error.account_error'), Lang::get('authentication.error.account_not_found_error'));
-                } elseif (($user['role_id'] == config('enums.user_role.user') || $user['role_id'] == null)) { 
+                } else { 
                     $toEmail = $request->email;
 
                     $passwordReset = $this->passwordReset_object->updateOrCreatePasswordResetDetails($user);
@@ -155,7 +155,7 @@ class LoginController extends BaseController
                         $data = array(
                             'user' => $user,
                             'forgotPasswordUrl' => $urlPath . '/' . $user->id . '/' . $passwordReset->token,
-                            'emailTemplate' => 'emails.users.forgot-password',
+                            'emailTemplate' => 'emails.forgot-password',
                             'message' => 'Reset your password',
                             'subject' =>'Account Password Recovery',
                             'toEmail' => $toEmail,
@@ -169,10 +169,6 @@ class LoginController extends BaseController
                     } else {
                         return $this->sendError(Lang::get('authentication.error.login_error'), Lang::get('authentication.error.email_send_error'));
                     }
-                } else {
-                    $message = Lang::get('authentication.error.user_role_mail_error');
-                    $login_error = Lang::get('authentication.error.role_error');
-                    return $this->sendError($login_error, $message, 200);
                 }
             } else {
                 return $this->sendError(Lang::get('authentication.error.login_error'), Lang::get('authentication.error.logged_in_error'));
@@ -189,7 +185,7 @@ class LoginController extends BaseController
         if (!$user) {
             return $this->sendError(Lang::get('authentication.error.account_error'), Lang::get('authentication.error.account_not_found_error'));
 
-        } elseif (($user['role_id'] == config('enums.user_role.user') || $user['role_id'] == null)) { 
+        } else { 
             $passwordReset = $this->passwordReset_object->getPasswordResetDetails($userId, $passwordResetCode);
             if ($passwordReset) {
                 if (Carbon::parse($passwordReset->updated_at)->addMinutes(1440)->isPast()) {
@@ -201,10 +197,6 @@ class LoginController extends BaseController
             } else {
                 return $this->sendError(Lang::get('authentication.error.invalid_token_error'), Lang::get('authentication.error.invalid_token_error_message'));
             }
-        } else {
-            $message = Lang::get('authentication.error.user_role_access_error');
-            $login_error = Lang::get('authentication.error.role_error');
-            return $this->sendError($login_error, $message, 200);
         }
     }
 
@@ -224,33 +216,27 @@ class LoginController extends BaseController
                 return $this->sendError($validaor_error, $validator->errors());
             }
 
-            $user = $this->user_object->getUserDetailsByUserField('id',$data['user_id']);
-            if (($user['role_id'] == config('enums.user_role.user') || $user['role_id'] == null)) { 
-                $passwordReset = $this->passwordReset_object->getPasswordResetDetails($data['user_id'], $data['token']);
+            $passwordReset = $this->passwordReset_object->getPasswordResetDetails($data['user_id'], $data['token']);
 
-                if (!$passwordReset) {
-                    return $this->sendError(Lang::get('authentication.error.invalid_token_error'), Lang::get('authentication.error.invalid_token_error_message'));
+            if (!$passwordReset) {
+                return $this->sendError(Lang::get('authentication.error.invalid_token_error'), Lang::get('authentication.error.invalid_token_error_message'));
+            } else {
+                if (Carbon::parse($passwordReset->updated_at)->addMinutes(1440)->isPast()) {
+                    $passwordReset->delete();
+                    return $this->sendError(Lang::get('authentication.error.expired_token_error'), Lang::get('authentication.error.expired_token_error_message'));
                 } else {
-                    if (Carbon::parse($passwordReset->updated_at)->addMinutes(1440)->isPast()) {
-                        $passwordReset->delete();
-                        return $this->sendError(Lang::get('authentication.error.expired_token_error'), Lang::get('authentication.error.expired_token_error_message'));
+                    $user = $this->user_object->getUserDetailsByUserField('id', $passwordReset->user_id);
+                    if (!$user) {
+                        return $this->sendError(Lang::get('authentication.error.account_error'), Lang::get('authentication.error.account_not_found_error'));
                     } else {
-                        $user = $this->user_object->getUserDetailsByUserField('id', $passwordReset->user_id);
-                        if (!$user) {
-                            return $this->sendError(Lang::get('authentication.error.account_error'), Lang::get('authentication.error.account_not_found_error'));
-                        } else {
-                            $user->password = bcrypt($request->password);
-                            $user->save();
-                            $passwordReset->delete();
-                            return $this->sendResponse(Lang::get('authentication.success.success'), Lang::get('authentication.success.password_update_success')); 
-                        }
+                        $user->password = bcrypt($request->password);
+                        $user->save();
+                        $passwordReset->delete();
+                        return $this->sendResponse(Lang::get('authentication.success.success'), Lang::get('authentication.success.password_update_success')); 
                     }
                 }
-            } else {
-                $message = Lang::get('authentication.error.user_role_access_error');
-                $login_error = Lang::get('authentication.error.role_error');
-                return $this->sendError($login_error, $message, 200);
             }
+
         } else {
             return $this->sendError(Lang::get('authentication.error.login_error'), Lang::get('authentication.error.logged_in_error'));
         }
