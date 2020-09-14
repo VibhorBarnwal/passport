@@ -1,3 +1,5 @@
+Laravel v7.28.1
+
 <p> We are using passport package for authentication</p>
 composer install <br />
 composer update <br /> 
